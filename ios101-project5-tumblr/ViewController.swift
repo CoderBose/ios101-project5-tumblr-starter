@@ -6,12 +6,51 @@
 import UIKit
 import Nuke
 
-class ViewController: UIViewController {
+class ViewController: UIViewController, UITableViewDataSource {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        print("🍏 numberOfRowsInSection called with posts count: \(posts.count)")
+        return posts.count
+    }
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        // Create, configure, and return a table view cell for the given row (i.e., `indexPath.row`)
 
+            print("🍏 cellForRowAt called for row: \(indexPath.row)")
 
+            // Get a reusable cell
+            // Returns a reusable table-view cell object for the specified reuse identifier and adds it to the table. This helps optimize table view performance as the app only needs to create enough cells to fill the screen and reuse cells that scroll off the screen instead of creating new ones.
+            // The identifier references the identifier you set for the cell previously in the storyboard.
+            // The `dequeueReusableCell` method returns a regular `UITableViewCell`, so we must cast it as our custom cell (i.e., `as! MovieCell`) to access the custom properties you added to the cell.
+            let cell = tableView.dequeueReusableCell(withIdentifier: "postCell", for: indexPath) as! postCell
+
+            // Get the movie associated table view row
+            let post = posts[indexPath.row]
+
+            // Configure the cell (i.e., update UI elements like labels, image views, etc.)
+
+            // Unwrap the optional poster path
+        if let photo = post.photos.first{
+                let imageUrl = photo.originalSize.url
+
+                // Use the Nuke library's load image function to (async) fetch and load the image from the image URL.
+                Nuke.loadImage(with: imageUrl, into: cell.postImageView)
+            }
+
+            // Set the text on the labels
+            cell.postOverviewCell.text = post.summary
+
+            // Return the cell for use in the respective table view row
+            return cell
+    }
+    
+
+    @IBOutlet weak var tableView: UITableView!
+    private var posts: [Post] = []
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        
+        tableView.dataSource = self
         
         fetchPosts()
     }
@@ -40,7 +79,7 @@ class ViewController: UIViewController {
                 let blog = try JSONDecoder().decode(Blog.self, from: data)
 
                 DispatchQueue.main.async { [weak self] in
-
+                    
                     let posts = blog.response.posts
 
 
@@ -48,6 +87,11 @@ class ViewController: UIViewController {
                     for post in posts {
                         print("🍏 Summary: \(post.summary)")
                     }
+                    
+                    self?.posts = posts
+                    self?.tableView.reloadData()
+                    print("🍏 Fetched and stored \(posts.count) posts")
+                    
                 }
 
             } catch {
